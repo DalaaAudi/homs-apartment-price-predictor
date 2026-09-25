@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مُقيِّم العقارات الذكي – حمص</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-gold': '#c9a84c',
+                        'brand-dark': '#1a1a2e',
+                    },
+                    fontFamily: {
+                        montserrat: ["'Montserrat'", "'IBM Plex Sans Arabic'", 'sans-serif'],
+                    },
+                    letterSpacing: {
+                        'widest-extra': '0.2em',
+                    },
+                },
+            },
+        };
+    </script>
+
+    <style>
+        * { font-family: 'Montserrat', 'IBM Plex Sans Arabic', sans-serif; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideUp .55s cubic-bezier(.4,0,.2,1) both; }
+
+        select.glass-select option {
+            background-color: #1a1a2e;
+            color: #fff;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(201,168,76,.5); border-radius: 3px; }
+    </style>
+</head>
+<body class="min-h-screen bg-brand-dark">
+
+<div class="relative min-h-screen">
+    <img src="{{ url_for('static', filename='hero.jpg') }}" alt="" class="fixed inset-0 w-full h-full object-cover">
+    <div class="fixed inset-0 bg-gradient-to-b from-black/75 via-black/55 to-black/80"></div>
+
+    <div class="relative z-10 w-full max-w-2xl mx-auto px-4 py-10 md:py-16">
+
+        <div class="text-center mb-8">
+            <div class="flex flex-wrap items-center justify-center gap-2.5 mb-5">
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white/85 text-xs uppercase tracking-widest">
+                    <span>✨</span><span>مدعوم بالذكاء الاصطناعي</span>
+                </div>
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-gold/15 backdrop-blur-md border border-brand-gold/40 text-brand-gold text-xs font-medium tracking-wide">
+                    <span>🎯</span><span>المرحلة الأولى: حمص</span>
+                </div>
+            </div>
+
+            <h1 class="text-3xl md:text-4xl font-light text-white uppercase tracking-widest mb-3">
+                مُقيِّم القيمة الشرائية للعقارات
+            </h1>
+            <p class="text-white/70 text-sm">
+                تقدير القيمة السوقية لبيع وشراء الشقق السكنية في مدينة حمص
+            </p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+                <div class="mb-5 rounded-xl border border-rose-400/40 bg-rose-500/10 backdrop-blur-md px-5 py-3.5 text-sm text-rose-100">
+                    {{ msg }}
+                </div>
+            {% endfor %}
+        {% endwith %}
+
+        {% if not model_ready %}
+        <div class="mb-6 flex items-center gap-3 rounded-xl border border-brand-gold/40 bg-brand-gold/10 backdrop-blur-md px-5 py-4 text-sm text-white/90">
+            <span class="text-lg">⚠️</span>
+            <span>النموذج غير محمّل. يرجى تشغيل <code class="px-1.5 py-0.5 rounded bg-white/10 text-brand-gold">python model.py</code> أولاً.</span>
+        </div>
+        {% endif %}
+
+        {% if result %}
+        <div class="animate-slide-up relative overflow-hidden rounded-2xl border border-brand-gold/30 bg-white/10 backdrop-blur-md shadow-2xl p-9 md:p-11 mb-8 text-center">
+            <div class="relative">
+                <div class="text-xs font-semibold uppercase tracking-widest-extra text-brand-gold/90 mb-3">
+                    السعر التقديري بواسطة الذكاء الاصطناعي
+                </div>
+                <div class="text-white font-light mb-1" style="font-size:clamp(2.6rem,8vw,4rem); line-height:1.1;">
+                    <span class="text-2xl align-top text-brand-gold/90 ml-1">$</span>{{ price }}
+                </div>
+                <div class="text-white/60 text-sm mb-7">{{ price_per_sqm }} $/م² · {{ sel_location }}</div>
+
+                <div class="flex flex-wrap justify-center gap-2.5">
+                    <span class="px-4 py-1.5 rounded-full border border-brand-gold/30 bg-brand-gold/10 text-white/90 text-sm">📐 {{ sel_area }} م²</span>
+                    <span class="px-4 py-1.5 rounded-full border border-brand-gold/30 bg-brand-gold/10 text-white/90 text-sm">🛏 {{ sel_rooms }} غرف</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <form action="/predict" method="post" class="space-y-6">
+
+            <!-- Section 1 -->
+            <div class="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md shadow-2xl p-7 md:p-9">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+                    <div class="w-9 h-9 rounded-lg bg-white/10 grid place-items-center text-lg flex-shrink-0">📍</div>
+                    <h2 class="text-sm font-semibold text-white/85 uppercase tracking-wide">الموقع والمساحة</h2>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <div class="sm:col-span-3 flex flex-col gap-2">
+                        <label class="text-xs font-medium text-white/60 tracking-wide">المنطقة في حمص</label>
+                        <select name="location" required class="glass-select w-full px-4 py-3 bg-white/5 text-white border border-white/25 rounded-lg text-sm focus:outline-none focus:border-brand-gold">
+                            <option value="">— اختر الحي —</option>
+                            {% for loc in locations %}
+                                <option value="{{ loc }}" {% if sel_location == loc %}selected{% endif %}>{{ loc }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xs font-medium text-white/60 tracking-wide">المساحة الإجمالية (م²)</label>
+                        <input type="number" name="total_area" placeholder="مثال: 120" value="{{ sel_area or '' }}" min="20" max="1000" required class="w-full px-4 py-3 bg-white/5 text-white border border-white/25 rounded-lg text-sm focus:outline-none focus:border-brand-gold">
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xs font-medium text-white/60 tracking-wide">المساحة الصافية (م²)</label>
+                        <input type="number" name="net_area" placeholder="مثال: 100" value="{{ sel_net_area or '' }}" min="15" max="1000" required class="w-full px-4 py-3 bg-white/5 text-white border border-white/25 rounded-lg text-sm focus:outline-none focus:border-brand-gold">
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xs font-medium text-white/60 tracking-wide">عدد الغرف</label>
+                        <input type="number" name="rooms_count" placeholder="مثال: 3" value="{{ sel_rooms }}" min="1" max="10" required class="w-full px-4 py-3 bg-white/5 text-white border border-white/25 rounded-lg text-sm focus:outline-none focus:border-brand-gold">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2 -->
+            <div class="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md shadow-2xl p-7 md:p-9">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+                    <div class="w-9 h-9 rounded-lg bg-white/10 grid place-items-center text-lg flex-shrink-0">🏗</div>
+                    <h2 class="text-sm font-semibold text-white/85 uppercase tracking-wide">تفاصيل البناء</h2>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-5">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xs font-medium text-white/60 tracking-wide">عدد الحمامات</label>
+                        <input type="number" name="bathrooms_count" value="{{ sel_bathrooms if sel_bathrooms is not none else '' }}" min="1" max="5" placeholder="مثال: 1" class="w-full px-4 py-3 bg-white/5 text-white border border-white/25 rounded-lg text-sm focus:outline-none focus:border-brand-gold placeholder:text-white/30">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xs font-medium text-white/60 tracking-wide">عدد الصالات</label>
+                        <input type="number" name="halls_count" value="{{ sel_halls if sel_halls is not none else '' }}" min="0" max="5" placeholder="مثال: 1" class="w-full px-4 py-3 bg-white/5 text-white border border-white/25 rounded-lg text-sm focus:outline-none focus:border-brand-gold placeholder:text-white/30">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xs font-medium text-white/60 tracking-wide">رقم الطابق</label>
+                        <input type="number" name="floor_num" value="{{ sel_floor if sel_floor is not none else '' }}" min="-3" max="15" placeholder="0 للأرضي" class="w-full px-4 py-3 bg-white/5 text-white border border-white/25 rounded-lg text-sm focus:outline-none focus:border-brand-gold placeholder:text-white/30">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xs font-medium text-white/60 tracking-wide">عمر البناء</label>
+                        <input type="number" name="building_age" value="{{ sel_age if sel_age is not none else '' }}" min="0" max="100" placeholder="مثال: 5" class="w-full px-4 py-3 bg-white/5 text-white border border-white/25 rounded-lg text-sm focus:outline-none focus:border-brand-gold placeholder:text-white/30">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2.5 -->
+            <div class="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md shadow-2xl p-7 md:p-9">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+                    <div class="w-9 h-9 rounded-lg bg-white/10 grid place-items-center text-lg flex-shrink-0">📋</div>
+                    <h2 class="text-sm font-semibold text-white/85 uppercase tracking-wide">الحالة والوضع القانوني</h2>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xs font-medium text-white/60 tracking-wide">التدفئة</label>
+                        <select name="heating_type" required class="glass-select w-full px-4 py-3 bg-white/5 text-white border border-white/25 rounded-lg text-sm focus:outline-none focus:border-brand-gold">
+                            <option value="">— اختر —</option>
+                            <option value="لا يوجد" {% if sel_heating == 'لا يوجد' %}selected{% endif %}>بدون تدفئة</option>
+                            <option value="تدفئة ديزل" {% if sel_heating == 'تدفئة ديزل' %}selected{% endif %}>تدفئة ديزل</option>
+                            <option value="تدفئة مركزية" {% if sel_heating == 'تدفئة مركزية' %}selected{% endif %}>تدفئة مركزية</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xs font-medium text-white/60 tracking-wide">حالة الشقة</label>
+                        <select name="house_condition" required class="glass-select w-full px-4 py-3 bg-white/5 text-white border border-white/25 rounded-lg text-sm focus:outline-none focus:border-brand-gold">
+                            <option value="">— اختر —</option>
+                            <option value="مسكون من صاحبه" {% if sel_condition == 'مسكون من صاحبه' %}selected{% endif %}>مسكون من صاحبه</option>
+                            <option value="فارغ" {% if sel_condition == 'فارغ' %}selected{% endif %}>فارغ</option>
+                            <option value="مؤجر" {% if sel_condition == 'مؤجر' %}selected{% endif %}>مؤجر</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xs font-medium text-white/60 tracking-wide">الوضع القانوني</label>
+                        <select name="legal_status" required class="glass-select w-full px-4 py-3 bg-white/5 text-white border border-white/25 rounded-lg text-sm focus:outline-none focus:border-brand-gold">
+                            <option value="">— اختر —</option>
+                            <option value="طابو أخضر/نظامي" {% if sel_legal == 'طابو أخضر/نظامي' %}selected{% endif %}>طابو أخضر / نظامي</option>
+                            <option value="كاتب عدل/وكالة" {% if sel_legal == 'كاتب عدل/وكالة' %}selected{% endif %}>كاتب عدل / وكالة</option>
+                            <option value="حكم محكمة" {% if sel_legal == 'حكم محكمة' %}selected{% endif %}>حكم محكمة</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3 -->
+            <div class="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md shadow-2xl p-7 md:p-9">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+                    <div class="w-9 h-9 rounded-lg bg-white/10 grid place-items-center text-lg flex-shrink-0">✨</div>
+                    <h2 class="text-sm font-semibold text-white/85 uppercase tracking-wide">الخدمات والمميزات</h2>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="group relative flex items-center gap-3 px-4 py-3 rounded-lg border border-white/20 bg-white/5 cursor-pointer transition-all duration-300 hover:border-brand-gold/60 has-[:checked]:border-brand-gold has-[:checked]:bg-brand-gold/15">
+                        <input type="checkbox" name="near_hospital" value="1" class="sr-only" {% if 'near_hospital' in selected_amenities %}checked{% endif %}>
+                        <span class="w-5 h-5 rounded border-2 border-white/40 flex items-center justify-center flex-shrink-0 transition-colors group-has-[:checked]:bg-brand-gold group-has-[:checked]:border-brand-gold">
+                            <svg class="w-3 h-3 text-white opacity-0 transition-opacity group-has-[:checked]:opacity-100" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.4 7.4a1 1 0 01-1.4 0L3.3 9.5a1 1 0 111.4-1.4l3.9 3.9 6.7-6.7a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+                        </span>
+                        <span class="text-sm text-white/85 select-none">🏥 قريب من مشفى</span>
+                    </label>
+
+                    <label class="group relative flex items-center gap-3 px-4 py-3 rounded-lg border border-white/20 bg-white/5 cursor-pointer transition-all duration-300 hover:border-brand-gold/60 has-[:checked]:border-brand-gold has-[:checked]:bg-brand-gold/15">
+                        <input type="checkbox" name="near_market" value="1" class="sr-only" {% if 'near_market' in selected_amenities %}checked{% endif %}>
+                        <span class="w-5 h-5 rounded border-2 border-white/40 flex items-center justify-center flex-shrink-0 transition-colors group-has-[:checked]:bg-brand-gold group-has-[:checked]:border-brand-gold">
+                            <svg class="w-3 h-3 text-white opacity-0 transition-opacity group-has-[:checked]:opacity-100" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.4 7.4a1 1 0 01-1.4 0L3.3 9.5a1 1 0 111.4-1.4l3.9 3.9 6.7-6.7a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+                        </span>
+                        <span class="text-sm text-white/85 select-none">🛒 قريب من سوق</span>
+                    </label>
+
+                    <label class="group relative flex items-center gap-3 px-4 py-3 rounded-lg border border-white/20 bg-white/5 cursor-pointer transition-all duration-300 hover:border-brand-gold/60 has-[:checked]:border-brand-gold has-[:checked]:bg-brand-gold/15">
+                        <input type="checkbox" name="has_elevator" value="1" class="sr-only" {% if 'has_elevator' in selected_amenities %}checked{% endif %}>
+                        <span class="w-5 h-5 rounded border-2 border-white/40 flex items-center justify-center flex-shrink-0 transition-colors group-has-[:checked]:bg-brand-gold group-has-[:checked]:border-brand-gold">
+                            <svg class="w-3 h-3 text-white opacity-0 transition-opacity group-has-[:checked]:opacity-100" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.4 7.4a1 1 0 01-1.4 0L3.3 9.5a1 1 0 111.4-1.4l3.9 3.9 6.7-6.7a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+                        </span>
+                        <span class="text-sm text-white/85 select-none">🛗 مصعد</span>
+                    </label>
+
+                    <label class="group relative flex items-center gap-3 px-4 py-3 rounded-lg border border-white/20 bg-white/5 cursor-pointer transition-all duration-300 hover:border-brand-gold/60 has-[:checked]:border-brand-gold has-[:checked]:bg-brand-gold/15">
+                        <input type="checkbox" name="has_parking" value="1" class="sr-only" {% if 'has_parking' in selected_amenities %}checked{% endif %}>
+                        <span class="w-5 h-5 rounded border-2 border-white/40 flex items-center justify-center flex-shrink-0 transition-colors group-has-[:checked]:bg-brand-gold group-has-[:checked]:border-brand-gold">
+                            <svg class="w-3 h-3 text-white opacity-0 transition-opacity group-has-[:checked]:opacity-100" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.4 7.4a1 1 0 01-1.4 0L3.3 9.5a1 1 0 111.4-1.4l3.9 3.9 6.7-6.7a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+                        </span>
+                        <span class="text-sm text-white/85 select-none">🚗 موقف سيارات</span>
+                    </label>
+
+                    <label class="group relative flex items-center gap-3 px-4 py-3 rounded-lg border border-white/20 bg-white/5 cursor-pointer transition-all duration-300 hover:border-brand-gold/60 has-[:checked]:border-brand-gold has-[:checked]:bg-brand-gold/15 sm:col-span-2">
+                        <input type="checkbox" name="is_furnished" value="1" class="sr-only" {% if 'is_furnished' in selected_amenities %}checked{% endif %}>
+                        <span class="w-5 h-5 rounded border-2 border-white/40 flex items-center justify-center flex-shrink-0 transition-colors group-has-[:checked]:bg-brand-gold group-has-[:checked]:border-brand-gold">
+                            <svg class="w-3 h-3 text-white opacity-0 transition-opacity group-has-[:checked]:opacity-100" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.4 7.4a1 1 0 01-1.4 0L3.3 9.5a1 1 0 111.4-1.4l3.9 3.9 6.7-6.7a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+                        </span>
+                        <span class="text-sm text-white/85 select-none">🛋️ مفروش</span>
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" {% if not model_ready %}disabled{% endif %} class="w-full py-4 bg-brand-gold text-white text-sm font-semibold uppercase tracking-widest-extra rounded-lg hover:bg-brand-gold/90 transition-all shadow-lg disabled:opacity-40 cursor-pointer">
+                🔮 احسب القيمة التقديرية
+            </button>
+        </form>
+
+    </div>
+</div>
+
+</body>
+</html>
